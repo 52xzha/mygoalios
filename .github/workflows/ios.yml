@@ -13,22 +13,34 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Автоматически распаковываем твой архив
     - name: Unpack project archive
       run: |
-        unzip -o *.zip
+        unzip -o MyGoal-iOS.zip
+        # Переносим всё содержимое из подпапок наружу, если они создались
+        if [ -d "MyGoal-iOS" ]; then
+          cp -R MyGoal-iOS/* .
+        fi
         ls -la
 
     - name: Install XcodeGen
       run: brew install xcodegen
 
     - name: Generate Xcode Project
-      run: xcodegen generate
+      run: |
+        if [ -f "project.yml" ]; then
+          xcodegen generate
+        else
+          echo "Error: project.yml not found!" && exit 1
+        fi
 
     - name: Build App for iOS
       run: |
-        xcodebuild -project MyGoal.xcodeproj \
-                   -scheme MyGoal \
+        # Ищем сгенерированный проект динамически
+        XCODOPROJ=$(ls -d *.xcodeproj | head -n 1)
+        SCHEME=$(basename "$XCODOPROJ" .xcodeproj)
+        
+        xcodebuild -project "$XCODOPROJ" \
+                   -scheme "$SCHEME" \
                    -configuration Release \
                    -sdk iphoneos \
                    CODE_SIGNING_ALLOWED=NO \
@@ -38,7 +50,7 @@ jobs:
     - name: Create IPA Package
       run: |
         mkdir -p Payload
-        cp -r build/Release-iphoneos/MyGoal.app Payload/
+        cp -r build/Release-iphoneos/*.app Payload/
         zip -r MyGoal.ipa Payload
 
     - name: Upload IPA Artifact
