@@ -1,0 +1,49 @@
+name: Build iOS App from ZIP
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # Автоматически распаковываем твой архив (скрипт ищет любой .zip файл)
+    - name: Unpack project archive
+      run: |
+        unzip -o *.zip
+        ls -la
+
+    - name: Install XcodeGen
+      run: brew install xcodegen
+
+    - name: Generate Xcode Project
+      run: xcodegen generate
+
+    - name: Build App for iOS
+      run: |
+        xcodebuild -project MyGoal.xcodeproj \
+                   -scheme MyGoal \
+                   -configuration Release \
+                   -sdk iphoneos \
+                   CODE_SIGNING_ALLOWED=NO \
+                   CODE_SIGNING_REQUIRED=NO \
+                   clean build
+
+    - name: Create IPA Package
+      run: |
+        mkdir -p Payload
+        cp -r build/Release-iphoneos/MyGoal.app Payload/
+        zip -r MyGoal.ipa Payload
+
+    - name: Upload IPA Artifact
+      uses: actions/artifacts@v4
+      with:
+        name: MyGoal-iOS-App
+        path: MyGoal.ipa
+        
