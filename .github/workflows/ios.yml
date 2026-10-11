@@ -13,7 +13,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Автоматически распаковываем твой архив (скрипт ищет любой .zip файл)
+    # Автоматически распаковываем твой архив
     - name: Unpack project archive
       run: |
         unzip -o *.zip
@@ -42,7 +42,7 @@ jobs:
         zip -r MyGoal.ipa Payload
 
     - name: Upload IPA Artifact
-      uses: actions/artifacts@v4
+      uses: actions/upload-artifact@v4
       with:
         name: MyGoal-iOS-App
         path: MyGoal.ipa
