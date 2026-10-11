@@ -16,33 +16,23 @@ jobs:
     - name: Unpack project archive
       run: |
         unzip -o MyGoal-iOS.zip
-        # Переносим всё содержимое из подпапок наружу, если они создались
-        if [ -d "MyGoal-iOS" ]; then
-          cp -R MyGoal-iOS/* .
-        fi
+        # Так как внутри архива папка MyGoal-iOS, вытаскиваем всё наружу в корень
+        cp -R MyGoal-iOS/* .
         ls -la
 
     - name: Install XcodeGen
       run: brew install xcodegen
 
     - name: Generate Xcode Project
-      run: |
-        if [ -f "project.yml" ]; then
-          xcodegen generate
-        else
-          echo "Error: project.yml not found!" && exit 1
-        fi
+      run: xcodegen generate
 
     - name: Build App for iOS
       run: |
-        # Ищем сгенерированный проект динамически
-        XCODOPROJ=$(ls -d *.xcodeproj | head -n 1)
-        SCHEME=$(basename "$XCODOPROJ" .xcodeproj)
-        
-        xcodebuild -project "$XCODOPROJ" \
-                   -scheme "$SCHEME" \
+        xcodebuild -project MyGoal.xcodeproj \
+                   -scheme MyGoal \
                    -configuration Release \
                    -sdk iphoneos \
+                   -derivedDataPath build \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
                    clean build
@@ -50,7 +40,7 @@ jobs:
     - name: Create IPA Package
       run: |
         mkdir -p Payload
-        cp -r build/Release-iphoneos/*.app Payload/
+        cp -r build/Build/Products/Release-iphoneos/*.app Payload/
         zip -r MyGoal.ipa Payload
 
     - name: Upload IPA Artifact
